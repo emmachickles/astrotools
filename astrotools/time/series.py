@@ -1,7 +1,5 @@
 """Light-curve time-series utilities (ported from atlas-quicklook)."""
 
-from __future__ import annotations
-
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, SkyCoord
@@ -9,11 +7,11 @@ from astropy.coordinates import EarthLocation, SkyCoord
 
 def bjd_convert(
     time,
-    ra: float,
-    dec: float,
-    date_format: str = "mjd",
-    telescope: str = "Palomar",
-    scale: str = "tcb",
+    ra,
+    dec,
+    date_format="mjd",
+    telescope="Palomar",
+    scale="tcb",
 ):
     """Convert times to barycentric Julian dates."""
 
@@ -30,9 +28,9 @@ def bjd_convert(
 
 def phase_fold(
     time,
-    period: float,
-    period_derivative: float = 0.0,
-    reference_epoch: float | None = None,
+    period,
+    period_derivative=0.0,
+    reference_epoch=None,
 ):
     """Phase-fold time series data accounting for optional period derivative."""
 
@@ -49,12 +47,12 @@ def bin_phase_folded_data(
     time,
     flux,
     flux_err,
-    period: float,
-    period_derivative: float = 0.0,
-    reference_epoch: float | None = None,
-    num_bins: int = 500,
-    num_cycles: int = 3,
-    normalization: str | bool = False,
+    period,
+    period_derivative=0.0,
+    reference_epoch=None,
+    num_bins=500,
+    num_cycles=3,
+    normalization=False,
 ):
     """Bin phase-folded light-curve data with inverse-variance weighting."""
 

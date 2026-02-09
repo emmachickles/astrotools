@@ -1,25 +1,21 @@
 """Configuration helpers for locating ATLAS light-curve files."""
 
-from __future__ import annotations
-
 from pathlib import Path
-import os
 import socket
-from typing import Iterable, Iterator
 
 # Host-specific defaults mirroring the atlas-quicklook project.
-_DEFAULT_ATLAS_HOST_PATHS: dict[str, Path] = {
+_DEFAULT_ATLAS_HOST_PATHS = {
     "hypernova": Path("/data2/ATLAS/WDs/"),
     "oreo": Path("/data/atlas/wds_subset/"),
     "node": Path("/orcd/data/kburdge/001/ATLAS/ATLAS_Lightcurves/"),
 }
 
 
-def _hostname() -> str:
+def _hostname():
     return socket.gethostname()
 
 
-def atlas_base_dir(atlas_dir: str | Path | None = None) -> Path:
+def atlas_base_dir(atlas_dir=None):
     """Resolve the root directory that holds the raw ATLAS light-curve files.
 
     Resolution order (first match wins):
@@ -51,17 +47,17 @@ def atlas_base_dir(atlas_dir: str | Path | None = None) -> Path:
     return base
 
 
-def atlas_data_path(*parts: str | os.PathLike[str], atlas_dir: str | Path | None = None) -> Path:
+def atlas_data_path(*parts, atlas_dir=None):
     """Join paths under the resolved ATLAS light-curve root."""
 
     return atlas_base_dir(atlas_dir).joinpath(*map(Path, parts))
 
 
 def iter_lightcurve_files(
-    atlas_dir: str | Path | None = None,
-    recursive: bool = True,
-    allowed_suffixes: Iterable[str] | None = None,
-) -> Iterator[Path]:
+    atlas_dir=None,
+    recursive=True,
+    allowed_suffixes=None,
+):
     """Yield candidate light-curve files under the ATLAS directory.
 
     Parameters

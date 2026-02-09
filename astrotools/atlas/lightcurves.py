@@ -1,10 +1,7 @@
 """Utilities for working with ATLAS light curves."""
 
-from __future__ import annotations
-
 from pathlib import Path
 import random
-from typing import Iterable
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -37,7 +34,7 @@ ATLAS_COLS = {
 }
 
 
-def lightcurve_path(source: str | int | Path, atlas_dir: str | Path | None = None) -> Path:
+def lightcurve_path(source, atlas_dir=None):
     """Return the file path for a given source identifier or path-like."""
 
     if isinstance(source, Path):
@@ -46,10 +43,10 @@ def lightcurve_path(source: str | int | Path, atlas_dir: str | Path | None = Non
 
 
 def list_lightcurve_files(
-    atlas_dir: str | Path | None = None,
-    recursive: bool = True,
-    allowed_suffixes: Iterable[str] | None = None,
-    limit: int | None = None,
+    atlas_dir=None,
+    recursive=True,
+    allowed_suffixes=None,
+    limit=None,
 ):
     """Collect light-curve file paths under the ATLAS directory."""
 
@@ -66,10 +63,10 @@ def list_lightcurve_files(
 
 
 def count_lightcurves(
-    atlas_dir: str | Path | None = None,
-    recursive: bool = True,
-    allowed_suffixes: Iterable[str] | None = None,
-) -> int:
+    atlas_dir=None,
+    recursive=True,
+    allowed_suffixes=None,
+):
     """Return the number of available ATLAS light-curve files."""
 
     return sum(
@@ -81,11 +78,11 @@ def count_lightcurves(
 
 
 def choose_random_lightcurve(
-    atlas_dir: str | Path | None = None,
-    recursive: bool = True,
-    allowed_suffixes: Iterable[str] | None = None,
-    seed: int | None = None,
-) -> Path:
+    atlas_dir=None,
+    recursive=True,
+    allowed_suffixes=None,
+    seed=None,
+):
     """Randomly select a light-curve file path."""
 
     files = list_lightcurve_files(
@@ -100,7 +97,7 @@ def choose_random_lightcurve(
     return rng.choice(files)
 
 
-def load_lightcurve(source: str | int | Path, atlas_dir: str | Path | None = None):
+def load_lightcurve(source, atlas_dir=None):
     """Load a single ATLAS light curve into numpy arrays.
 
     Returns a dictionary with ``time``, ``flux``, ``flux_err``, ``filter``, ``ra``, ``dec``.
@@ -136,11 +133,11 @@ def load_lightcurve(source: str | int | Path, atlas_dir: str | Path | None = Non
 
 def plot_lightcurve(
     lc_data,
-    source_id: str | int | None = None,
+    source_id=None,
     figsize=(10, 4),
-    dpi: int = 120,
-    alpha: float = 0.7,
-    marker_size: float = 2.5,
+    dpi=120,
+    alpha=0.7,
+    marker_size=2.5,
 ):
     """Plot a light curve separated by ATLAS filters."""
 
