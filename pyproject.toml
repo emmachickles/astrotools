@@ -6,8 +6,16 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "astropy>=7.2.0",
-    "cuvarbase>=0.2.5",
     "matplotlib>=3.10.8",
     "numpy>=2.4.2",
     "pandas>=3.0.0",
+    "PyAstronomy>=0.23.0",
+    "scipy>=1.14.1",
+]
+
+[project.optional-dependencies]
+cuda = [
+    "cuvarbase>=0.2.5",
+    "pycuda>=2017.1.1",
+    "scikit-cuda>=0.5.3",
 ]

@@ -1,29 +1,8 @@
 """Light-curve time-series utilities (ported from atlas-quicklook)."""
 
 import numpy as np
-from astropy.time import Time
-from astropy.coordinates import EarthLocation, SkyCoord
 
-
-def bjd_convert(
-    time,
-    ra,
-    dec,
-    date_format="mjd",
-    telescope="Palomar",
-    scale="tcb",
-):
-    """Convert times to barycentric Julian dates."""
-
-    coord = SkyCoord(ra, dec, unit="deg")
-    time_obj = Time(time, format=date_format, scale="utc")
-    time_scaled = time_obj.tcb if scale == "tcb" else time_obj.tdb
-    observatory = EarthLocation.of_site(telescope)
-    correction = time_scaled.light_travel_time(
-        coord, kind="barycentric", location=observatory
-    )
-    bjd = time_scaled + correction
-    return bjd.mjd
+from .barycentric import bjd_convert
 
 
 def phase_fold(
