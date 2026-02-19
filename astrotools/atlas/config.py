@@ -1,18 +1,9 @@
 """Configuration helpers for locating ATLAS light-curve files."""
 
 from pathlib import Path
-import socket
 
-# Host-specific defaults mirroring the atlas-quicklook project.
-_DEFAULT_ATLAS_HOST_PATHS = {
-    "hypernova": Path("/data2/ATLAS/WDs/"),
-    "oreo": Path("/data/atlas/wds_subset/"),
-    "node": Path("/orcd/data/kburdge/001/ATLAS/ATLAS_Lightcurves/"),
-}
-
-
-def _hostname():
-    return socket.gethostname()
+# Import from central config module
+from ..config import get_atlas_dir
 
 
 def atlas_base_dir(atlas_dir=None):
@@ -20,36 +11,36 @@ def atlas_base_dir(atlas_dir=None):
 
     Resolution order (first match wins):
     1) Explicit ``atlas_dir`` argument.
-    2) Hostname-based defaults used by the atlas-quicklook project.
+    2) Hostname-based defaults from central config module.
+    
+    Parameters
+    ----------
+    atlas_dir : str or Path, optional
+        Explicit path to ATLAS directory. If None, uses hostname-based default.
+    
+    Returns
+    -------
+    Path
+        Resolved ATLAS directory path.
     """
-
-    if atlas_dir is not None:
-        base = Path(atlas_dir).expanduser()
-    else:
-        host = _hostname()
-        base = None
-        for key, path in _DEFAULT_ATLAS_HOST_PATHS.items():
-            if host == key or host.startswith(key):
-                base = path
-                break
-        if base is None:
-            raise RuntimeError(
-                "Could not determine ATLAS light-curve directory. "
-                "Pass atlas_dir explicitly or add your hostname to _DEFAULT_ATLAS_HOST_PATHS."
-            )
-
-    if not base.exists():
-        raise FileNotFoundError(
-            f"ATLAS light-curve directory '{base}' does not exist. "
-            "Pass atlas_dir explicitly or add your hostname to _DEFAULT_ATLAS_HOST_PATHS."
-        )
-
-    return base
+    return get_atlas_dir(atlas_dir)
 
 
 def atlas_data_path(*parts, atlas_dir=None):
-    """Join paths under the resolved ATLAS light-curve root."""
-
+    """Join paths under the resolved ATLAS light-curve root.
+    
+    Parameters
+    ----------
+    *parts : str or Path
+        Path components to join under ATLAS root.
+    atlas_dir : str or Path, optional
+        Explicit path to ATLAS directory. If None, uses hostname-based default.
+    
+    Returns
+    -------
+    Path
+        Joined path under ATLAS root.
+    """
     return atlas_base_dir(atlas_dir).joinpath(*map(Path, parts))
 
 
@@ -69,8 +60,12 @@ def iter_lightcurve_files(
     allowed_suffixes : iterable of str, optional
         If provided, only files whose suffix matches one of the supplied values
         will be yielded. Provide values without the leading dot.
+    
+    Yields
+    ------
+    Path
+        Light curve file paths.
     """
-
     base = atlas_base_dir(atlas_dir)
     iterator = base.rglob("*") if recursive else base.iterdir()
 
