@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(__NEW_LINE_bcdc63bcc71faf40__ $PYTHON:*)"
+    ]
+  }
+}
