@@ -119,11 +119,15 @@ def load_lightcurve(source, atlas_dir=None):
     flux = df.iloc[:, ATLAS_COLS["ujy"]].to_numpy(float)
     flux_err = df.iloc[:, ATLAS_COLS["dujy"]].to_numpy(float)
     filter_col = df.iloc[:, ATLAS_COLS["filter"]].to_numpy(str)
+    mag = df.iloc[:, ATLAS_COLS["m"]].to_numpy(float)
+    mag_err = df.iloc[:, ATLAS_COLS["dm"]].to_numpy(float)
 
     return {
         "time": t_bjd,
         "flux": flux,
         "flux_err": flux_err,
+        "mag": mag,
+        "mag_err": mag_err,
         "filter": filter_col,
         "ra": ra,
         "dec": dec,
