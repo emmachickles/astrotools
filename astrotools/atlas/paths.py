@@ -8,6 +8,11 @@ from .config import atlas_base_dir
 _DEFAULT_BLS_HOST_PATHS = {
     "hypernova": Path("/data/Bulk_BLS_ATLAS/"),
     "node": Path("/orcd/data/kburdge/001/ATLAS/ATLAS_BLS/"),
+    "oreo": Path("/data/bulk_bls/EOF_ATLAS/"),
+}
+
+_DEFAULT_TESS_BLS_HOST_PATHS = {
+    "oreo": Path("/data/bulk_bls/TESS_Cycle_5/"),
 }
 
 
@@ -43,6 +48,33 @@ def bls_path(*parts, bls_dir=None):
         raise FileNotFoundError(
             f"ATLAS BLS directory '{base}' does not exist. "
             "Pass bls_dir explicitly or add your hostname to _DEFAULT_BLS_HOST_PATHS."
+        )
+
+    return base.joinpath(*map(Path, parts))
+
+
+def tess_bls_path(*parts, bls_dir=None):
+    """Join paths under the TESS BLS results root."""
+
+    if bls_dir is not None:
+        base = Path(bls_dir).expanduser()
+    else:
+        host = _hostname()
+        base = None
+        for key, path in _DEFAULT_TESS_BLS_HOST_PATHS.items():
+            if host == key or host.startswith(key):
+                base = path
+                break
+        if base is None:
+            raise RuntimeError(
+                "Could not determine TESS BLS directory. "
+                "Pass bls_dir explicitly or add your hostname to _DEFAULT_TESS_BLS_HOST_PATHS."
+            )
+
+    if not base.exists():
+        raise FileNotFoundError(
+            f"TESS BLS directory '{base}' does not exist. "
+            "Pass bls_dir explicitly or add your hostname to _DEFAULT_TESS_BLS_HOST_PATHS."
         )
 
     return base.joinpath(*map(Path, parts))

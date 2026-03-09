@@ -172,8 +172,13 @@ def interpolate_model_grid(
     teff,
     logg,
 ):
-    """Interpolate model atmospheres to requested wavelengths."""
+    """Interpolate model atmospheres to requested wavelengths.
 
+    grid_flux axes: [logg_index, teff_index, wavelength_index]
+    teff_grid: Kelvin (linear)
+    logg_grid: dex = log10(g) (linear in dex)
+    """
+    import numpy as np
     from scipy.ndimage import map_coordinates
 
     wave_value = _to_value(wavelength, u.AA)
@@ -181,26 +186,32 @@ def interpolate_model_grid(
     teff_value = _to_value(teff, u.K)
     logg_value = _to_value(logg, u.dex)
 
-    vectemp = 0 * wave_value + teff_value
-    veclogg = 0 * wave_value + logg_value
-
-    # np.interp takes arguments (x, xp, yp).
     teff_grid_value = _to_value(teff_grid, u.K)
     logg_grid_value = _to_value(logg_grid, u.dex)
 
-    windex = np.interp(wave_value, modwave_value, np.arange(len(modwave_value)))
-    tindex = np.interp(
-        np.log10(vectemp),
-        np.log10(teff_grid_value),
-        np.arange(len(teff_grid_value)),
-    )
-    gindex = np.interp(
-        np.log10(veclogg),
-        np.log10(logg_grid_value),
-        np.arange(len(logg_grid_value)),
-    )
+    # np.interp expects xp increasing
+    if not np.all(np.diff(modwave_value) > 0):
+        raise ValueError("grid_wavelength must be strictly increasing.")
+    if not np.all(np.diff(teff_grid_value) > 0):
+        raise ValueError("teff_grid must be strictly increasing.")
+    if not np.all(np.diff(logg_grid_value) > 0):
+        raise ValueError("logg_grid must be strictly increasing.")
 
-    flux = map_coordinates(grid_flux, np.array([gindex, tindex, windex]))
+    # Broadcast scalar Teff/logg to arrays matching wavelength length
+    vectemp = np.full_like(wave_value, teff_value, dtype=float)
+    veclogg = np.full_like(wave_value, logg_value, dtype=float)
+
+    # Convert physical coords -> fractional indices in the model grid
+    windex = np.interp(wave_value, modwave_value, np.arange(len(modwave_value)))
+    tindex = np.interp(vectemp, teff_grid_value, np.arange(len(teff_grid_value)))
+    gindex = np.interp(veclogg, logg_grid_value, np.arange(len(logg_grid_value)))
+
+    flux = map_coordinates(
+        grid_flux,
+        np.array([gindex, tindex, windex]),
+        order=1,        # trilinear
+        mode="nearest", # behave sensibly at edges
+    )
 
     return flux
 

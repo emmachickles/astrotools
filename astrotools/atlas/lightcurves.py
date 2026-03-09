@@ -1,9 +1,12 @@
 """Utilities for working with ATLAS light curves."""
 
+from __future__ import annotations
+
 from pathlib import Path
 import random
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from .config import atlas_data_path, iter_lightcurve_files
@@ -33,6 +36,90 @@ ATLAS_COLS = {
     "obs": 19,
 }
 
+# ── HDF5 index cache ────────────────────────────────────────────────────────
+
+_HDF5_HANDLE = None        # h5py.File (kept open, read-only)
+_HDF5_PATH: str | None = None
+_HDF5_SOURCE_IDS: np.ndarray | None = None   # sorted int64 array
+
+
+def _ensure_hdf5_index(hdf5_path):
+    """Open the HDF5 file and cache its source_id array for binary search."""
+    global _HDF5_HANDLE, _HDF5_PATH, _HDF5_SOURCE_IDS
+
+    path_str = str(hdf5_path)
+    if _HDF5_PATH == path_str and _HDF5_HANDLE is not None:
+        return True
+
+    if _HDF5_HANDLE is not None:
+        try:
+            _HDF5_HANDLE.close()
+        except Exception:
+            pass
+
+    try:
+        import h5py
+    except ImportError:
+        _HDF5_HANDLE = None
+        _HDF5_PATH = None
+        _HDF5_SOURCE_IDS = None
+        return False
+
+    _HDF5_HANDLE = h5py.File(path_str, "r")
+    _HDF5_PATH = path_str
+    _HDF5_SOURCE_IDS = _HDF5_HANDLE["source_id"][:]
+    return True
+
+
+def _load_lightcurve_hdf5(source_id, hdf5_path):
+    """Load a light curve from the ATLAS HDF5 file.
+
+    Returns the same dict format as the text-file path, or None.
+    """
+    if not _ensure_hdf5_index(hdf5_path):
+        return None
+
+    h5 = _HDF5_HANDLE
+    ids = _HDF5_SOURCE_IDS
+
+    idx = int(np.searchsorted(ids, source_id))
+    if idx >= len(ids) or ids[idx] != source_id:
+        return None
+
+    lo = int(h5["offsets"][idx])
+    hi = int(h5["offsets"][idx + 1])
+    if hi <= lo:
+        return None
+
+    ra = float(h5["ra"][idx])
+    dec = float(h5["dec"][idx])
+
+    t_mjd = h5["mjd"][lo:hi].astype(np.float64)
+    t_mid_mjd = t_mjd + 15.0 / 86400.0   # midpoint of 30 s exposure
+    t_bjd = bjd_convert(t_mid_mjd, ra, dec, date_format="mjd")
+
+    flux = h5["ujy"][lo:hi].astype(np.float64)
+    flux_err = h5["dujy"][lo:hi].astype(np.float64)
+    mag = h5["mag"][lo:hi].astype(np.float64)
+    mag_err = h5["dmag"][lo:hi].astype(np.float64)
+
+    filt_uint8 = h5["filt"][lo:hi]
+    filter_col = np.where(filt_uint8 == 1, "o", "c")
+
+    return {
+        "time": t_bjd,
+        "flux": flux,
+        "flux_err": flux_err,
+        "mag": mag,
+        "mag_err": mag_err,
+        "filter": filter_col,
+        "ra": ra,
+        "dec": dec,
+        "path": Path(str(source_id)),
+    }
+
+
+# ── public helpers ───────────────────────────────────────────────────────────
 
 def lightcurve_path(source, atlas_dir=None):
     """Return the file path for a given source identifier or path-like."""
@@ -100,9 +187,31 @@ def choose_random_lightcurve(
 def load_lightcurve(source, atlas_dir=None):
     """Load a single ATLAS light curve into numpy arrays.
 
-    Returns a dictionary with ``time``, ``flux``, ``flux_err``, ``filter``, ``ra``, ``dec``.
+    If *source* is a string or integer Gaia ID and an ATLAS HDF5 file is
+    available, the light curve is read from HDF5 (fast).  Otherwise (or if the
+    source is not found in HDF5) the original text-file path is used.
+
+    Returns a dictionary with ``time``, ``flux``, ``flux_err``, ``filter``,
+    ``ra``, ``dec``, or ``None`` on failure.
     """
 
+    # ── try HDF5 for non-Path sources ────────────────────────────────────
+    if not isinstance(source, Path):
+        try:
+            source_id = int(source)
+        except (ValueError, TypeError):
+            source_id = None
+
+        if source_id is not None:
+            from ..config import get_atlas_hdf5
+
+            hdf5_path = get_atlas_hdf5()
+            if hdf5_path is not None:
+                result = _load_lightcurve_hdf5(source_id, hdf5_path)
+                if result is not None:
+                    return result
+
+    # ── text-file fallback ───────────────────────────────────────────────
     path = lightcurve_path(source, atlas_dir=atlas_dir)
     try:
         df = pd.read_csv(path, sep=r"\s+", header=None, comment="#")

@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(__NEW_LINE_bcdc63bcc71faf40__ $PYTHON:*)"
+      "Bash(__NEW_LINE_bcdc63bcc71faf40__ $PYTHON:*)",
+      "Read(//home/echickle/projects/ZTFJ052610.4+593445.4/HST/MAST_2026-01-30T0038/HST/**)",
+      "Bash(python3 -c \":*)",
+      "Bash(~/miniforge3/bin/python -c \":*)",
+      "Bash(~/miniforge3/bin/python fit_tremblay_nlte.py)",
+      "Bash(~/miniforge3/bin/python -c \"import wdtools; print\\(wdtools.__file__\\)\")",
+      "Bash(~/miniforge3/bin/pip show wdtools)",
+      "Read(//data/models/**)",
+      "Bash(~/miniforge3/envs/stenv/bin/python -c \"import wdtools\")",
+      "Bash(~/miniforge3/bin/python fit_tremblay_nlte_v2.py)",
+      "Bash(ls -lh /home/echickle/projects/ZTFJ052610.4+593445.4/HST/ZTFJ0526p5934_v2_*.pdf /home/echickle/projects/ZTFJ052610.4+593445.4/HST/ZTFJ0526p5934_v2_results.txt)"
+    ],
+    "additionalDirectories": [
+      "/home/echickle/projects/ZTFJ052610.4+593445.4/HST"
     ]
   }
 }

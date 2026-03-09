@@ -15,9 +15,10 @@ from typing import Dict
 @dataclass
 class MachineConfig:
     """Configuration for a specific machine."""
-    
+
     name: str
     atlas_dir: Path | None = None
+    atlas_hdf5: Path | None = None
     tess_dir: Path | None = None
     catalog_dir: Path | None = None
     scratch_dir: Path | None = None
@@ -29,7 +30,8 @@ _MACHINE_CONFIGS: Dict[str, MachineConfig] = {
     "oreo": MachineConfig(
         name="oreo",
         atlas_dir=Path("/data/atlas/wds_subset/"),
-        tess_dir=Path("/home/echickle/orcd/pool/TESS_Lightcurves"),
+        atlas_hdf5=Path("/data/atlas/atlas_wds.h5"),
+        tess_dir=Path("/data/tess/ffi"),
         catalog_dir=Path("/home/echickle/orcd/pool/gaia_edr3_wd_catalog"),
         scratch_dir=Path("/home/echickle/orcd/pool"),
         wd_catalog=Path("/home/echickle/orcd/pool/WDs.txt"),
@@ -45,6 +47,7 @@ _MACHINE_CONFIGS: Dict[str, MachineConfig] = {
     "hypernova": MachineConfig(
         name="hypernova",
         atlas_dir=Path("/data2/ATLAS/WDs/"),
+        atlas_hdf5=Path("/data2/ATLAS/atlas_wds.h5"),
     ),
 }
 
@@ -114,6 +117,36 @@ def get_atlas_dir(atlas_dir: str | Path | None = None) -> Path:
         )
     
     return base
+
+
+def get_atlas_hdf5(atlas_hdf5: str | Path | None = None) -> Path | None:
+    """Resolve ATLAS HDF5 file path.
+
+    Unlike other ``get_*`` helpers this returns ``None`` instead of raising
+    when the path is unconfigured or the file does not exist, because HDF5
+    is an optional optimisation — callers fall back to text files.
+
+    Parameters
+    ----------
+    atlas_hdf5 : str | Path | None
+        Explicit file path.  If None, uses machine-specific default.
+
+    Returns
+    -------
+    Path | None
+        Resolved HDF5 path, or None if unavailable.
+    """
+    if atlas_hdf5 is not None:
+        path = Path(atlas_hdf5).expanduser()
+    else:
+        config = detect_machine()
+        if config is None or config.atlas_hdf5 is None:
+            return None
+        path = config.atlas_hdf5
+
+    if not path.exists():
+        return None
+    return path
 
 
 def get_tess_dir(tess_dir: str | Path | None = None) -> Path:
@@ -294,7 +327,11 @@ def print_config(verbose: bool = False) -> None:
     if config.atlas_dir:
         exists = "✓" if config.atlas_dir.exists() else "✗"
         print(f"  ATLAS:   {exists} {config.atlas_dir}")
-    
+
+    if config.atlas_hdf5:
+        exists = "✓" if config.atlas_hdf5.exists() else "✗"
+        print(f"  ATLAS H5:{exists} {config.atlas_hdf5}")
+
     if config.tess_dir:
         exists = "✓" if config.tess_dir.exists() else "✗"
         print(f"  TESS:    {exists} {config.tess_dir}")
@@ -319,6 +356,8 @@ def print_config(verbose: bool = False) -> None:
             print(f"\n{key} ({cfg.name}):")
             if cfg.atlas_dir:
                 print(f"  ATLAS:   {cfg.atlas_dir}")
+            if cfg.atlas_hdf5:
+                print(f"  ATLAS H5:{cfg.atlas_hdf5}")
             if cfg.tess_dir:
                 print(f"  TESS:    {cfg.tess_dir}")
             if cfg.catalog_dir:

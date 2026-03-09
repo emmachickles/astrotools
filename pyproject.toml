@@ -19,3 +19,9 @@ cuda = [
     "pycuda>=2017.1.1",
     "scikit-cuda>=0.5.3",
 ]
+gpu = [
+    "cupy>=13.4",  # install via: mamba install cupy cuda-version=12.8
+]
+hdf5 = [
+    "h5py>=3.0",
+]
